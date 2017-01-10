@@ -1,5 +1,6 @@
 import sys, win32com.client, MSO, MSPPT, time, random
 g = globals()
+random.seed()
 for c in dir(MSO.constants):    g[c] = getattr(MSO.constants, c)
 for c in dir(MSPPT.constants):  g[c] = getattr(MSPPT.constants, c)
 
@@ -43,8 +44,8 @@ sample_ranges.append(((group3_x_start, group3_x_stop),(group3_y_start, group3_y_
 
 for i in range(total_samples):
     group_index = i/(total_samples/3)
-    rand_x_coord = random.randrange(sample_ranges[group_index][0][0],sample_ranges[group_index][0][1])
-    rand_y_coord = random.randrange(sample_ranges[group_index][1][0],sample_ranges[group_index][1][1])
+    rand_x_coord = random.randint(sample_ranges[group_index][0][0],sample_ranges[group_index][0][1])
+    rand_y_coord = random.randint(sample_ranges[group_index][1][0],sample_ranges[group_index][1][1])
     samples.append(Base.Shapes.AddShape(9, rand_x_coord, rand_y_coord, 40, 40))
     samples[i].Fill.ForeColor.RGB = RGBtoInt(2*i, 2*i, 2*i)
     samples[i].Line.ForeColor.RGB = RGBtoInt(0,0,0)
@@ -60,7 +61,19 @@ line.line.EndArrowheadStyle  = MSO.constants.msoArrowheadTriangle
 line2 = Base.Shapes.AddLine(30, 275, 550, 275)
 line2.line.foreColor.RGB = 0
 line2.line.weight = 3.5
-line2.line.EndArrowheadStyle  = MSO.constants.msoArrowheadTriangle
+line2.line.EndArrowheadStyle = MSO.constants.msoArrowheadTriangle
+
+#===== K-Means =======
+# 1. Randomly select centers
+k=3
+centers = []
+for i in range(k):
+    random_sample_index = random.randint(0,total_samples)
+    centers.append((samples[random_sample_index].Left, samples[random_sample_index].Top))
+    Base.Shapes.AddShape(MSO.constants.msoShapeMathMultiply, samples[random_sample_index].Left, samples[random_sample_index].Top, 40, 40)
+
+for i in range(len(centers)):
+    print(centers[i][0], centers[i][0])
 
     # Add an oval. Shape 9 is an oval.
 #oval = Base.Shapes.AddShape(9, 2, 2, 2, 2)
