@@ -1,13 +1,30 @@
 import sys, win32com.client, MSO, MSPPT, time, random
 g = globals()
 random.seed()
-for c in dir(MSO.constants):    g[c] = getattr(MSO.constants, c)
-for c in dir(MSPPT.constants):  g[c] = getattr(MSPPT.constants, c)
+
+#for c in dir(MSO.constants):    g[c] = getattr(MSO.constants, c)
+#for c in dir(MSPPT.constants):  g[c] = getattr(MSPPT.constants, c)
+
+
+#--------- Definitions ----------
 
 def RGBtoInt(r, g, b):
     return r + g*256 + b*256*256
 
-#--------- Definitions
+def animate(seq, image, trigger, path, duration=1.5):
+    '''Move image along path when trigger is clicked'''
+    effect = seq.AddEffect(
+       Shape=image,
+       effectId=MSO.constants.msoAnimEffectPathDown,
+       trigger=MSO.constants.msoAnimTriggerOnShapeClick,
+    )
+    ani = effect.Behaviors.Add(MSO.constants.msoAnimTypeMotion)
+    ani.MotionEffect.Path = path
+    effect.Timing.TriggerType = MSO.constants.msoAnimTriggerWithPrevious
+    effect.Timing.TriggerShape = trigger
+    effect.Timing.Duration = duration
+
+#--------- Definitions ----------
 group1_x_start = 50;    group1_x_stop=200
 group1_y_start = 50;    group1_y_stop=200
 
