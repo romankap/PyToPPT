@@ -14,7 +14,7 @@ group2_x_start = 300;   group2_x_stop=500
 group2_y_start = 50;    group2_y_stop=200
 
 group3_x_start = 100;   group3_x_stop=350
-group3_y_start = 300;    group3_y_stop=500
+group3_y_start = 300;    group3_y_stop=450
 
 yellow_color = RGBtoInt(255, 255, 0)
 blue_color = RGBtoInt(0, 0, 255)
@@ -32,7 +32,7 @@ Presentation = Application.Presentations.Add()
 Base = Presentation.Slides.Add(1, 12)
 
 samples = []
-total_samples = 90
+total_samples = 12
 
 sample_ranges = []
 sample_ranges.append(((group1_x_start, group1_x_stop),(group1_y_start, group1_y_stop)))
@@ -52,9 +52,17 @@ for i in range(total_samples):
     samples[i].TextFrame.TextRange.Text = str(int(samples[i].Top))
     samples[i].TextFrame.TextRange.font.size = 12
 
+line = Base.Shapes.AddLine(275, 50, 275, 500)
+line.line.foreColor.RGB = 0
+line.line.weight = 3.5
+line.line.EndArrowheadStyle  = MSO.constants.msoArrowheadTriangle
 
+line2 = Base.Shapes.AddLine(30, 275, 550, 275)
+line2.line.foreColor.RGB = 0
+line2.line.weight = 3.5
+line2.line.EndArrowheadStyle  = MSO.constants.msoArrowheadTriangle
 
-# Add an oval. Shape 9 is an oval.
+    # Add an oval. Shape 9 is an oval.
 #oval = Base.Shapes.AddShape(9, 2, 2, 2, 2)
 #oval = Base.Shapes.AddShape(9, 0, 100, 100, 100)
 #line = Base.Shapes.AddShape(0x6d, 0, 100, 100, 100)
