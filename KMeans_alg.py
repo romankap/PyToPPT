@@ -17,6 +17,9 @@ tmp_save_filename = tmp_save_path + "test-" + now_string + ".pptx"
 Application = win32com.client.Dispatch("PowerPoint.Application")
 Presentation = Application.Presentations.Add()
 Presentation.saveas(tmp_save_filename)
+KMeans_defs.Presentation = Presentation
+KMeans_defs.Slide_Width = Presentation.PageSetup.SlideWidth
+KMeans_defs.Slide_Height = Presentation.PageSetup.SlideHeight
 
 
 #===== init =======
@@ -66,35 +69,35 @@ def KMeans_alg():
         time.sleep(1)
 
         #3. For each mean, calculate its new coords
+        first_mean = True
         for curr_mean in means:
-            sum_left_coord = 0
-            sum_top_coord = 0
+            sum_left_coord = 0; sum_top_coord = 0
             samples_belong_to_mean = 0
+
             for curr_sample in samples:
                 if curr_sample.get_class_name() == curr_mean.class_name:
                     sum_left_coord += curr_sample.left()
                     sum_top_coord += curr_sample.top()
                     samples_belong_to_mean += 1
 
-            curr_mean.left = sum_left_coord/samples_belong_to_mean
-            curr_mean.top = sum_top_coord/samples_belong_to_mean
-            curr_mean.replace_mean_shape()
+            new_left = sum_left_coord/samples_belong_to_mean
+            new_top = sum_top_coord/samples_belong_to_mean
+            #curr_mean.replace_mean_shape()
+            curr_mean.add_motion_animation(new_left, new_top, first_mean)
+            curr_mean.left = new_left
+            curr_mean.top = new_top
+            if first_mean:
+                first_mean = False
 
-        time.sleep(1)
+#        time.sleep(1)
 
-    for i in range(len(means)):
-        print(means[i].left, means[i].top)
+        for i in range(len(means)):
+            print(means[i].left, means[i].top)
 
     Presentation.save()
 
 
 #===== trial-and-error =======
-#def animate(seq, shape, trigger, path, duration=1.5):
-
-def animate(seq, shape, trigger, path, duration=1.5):
-    '''Move image along path when trigger is clicked'''
-
-
 def animate_try():
     KMeans_defs.Base = Presentation.Slides.Add(1, 12)
     shape = KMeans_defs.Base.Shapes.AddShape(MSOcon.msoShapeOval, 100, 100, 50, 50)
@@ -102,11 +105,11 @@ def animate_try():
     #motion_effect = Presentation.Slides(1).TimeLine.MainSequence.Behaviors.Add(MSOcon.msoAnimTypeMotion).MotionEffect
     seq = Presentation.Slides(1).TimeLine.MainSequence
     motion_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape, effectId=MSPPTcon.msoAnimTypeMotion)
-    effect = motion_effect_def.behaviors.add(MSPPTcon.msoAnimTypeMotion)
-    effect.motioneffect.fromX = 0
-    effect.motioneffect.fromY = 0
-    effect.motioneffect.toX = 20
-    effect.motioneffect.toY = 50
+    effect1 = motion_effect_def.behaviors.add(MSPPTcon.msoAnimTypeMotion)
+    effect1.motioneffect.fromX = 0
+    effect1.motioneffect.fromY = 0
+    effect1.motioneffect.toX = 20
+    effect1.motioneffect.toY = 50
     motion_effect_def.Timing.Duration = 1
 
     shape2 = KMeans_defs.Base.Shapes.AddShape(MSOcon.msoShapeOval, 300, 100, 80, 80)
@@ -133,9 +136,26 @@ def animate_try():
     effect2.motioneffect.toY = effect.motioneffect.fromY
     motion_effect_def2.Timing.Duration = 2
 
+    color_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape2,
+                                                                              effectId=MSPPTcon.msoAnimEffectChangeFillColor,
+                                                                              trigger=MSPPTcon.msoAnimTriggerWithPrevious)
+    color_effect = color_effect_def.behaviors.add(MSPPTcon.msoAnimTypeColor)
+    color_effect.ColorEffect.To.RGB = KMeans_defs.black_color
+
+
+    motion_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape,
+                                                                               effectId=MSPPTcon.msoAnimTypeMotion,
+                                                                               trigger=MSPPTcon.msoAnimTriggerWithPrevious)
+    effect = motion_effect_def.behaviors.add(MSPPTcon.msoAnimTypeMotion)
+    effect.motioneffect.fromX = effect1.motioneffect.toX
+    effect.motioneffect.fromY = effect1.motioneffect.toY
+    effect.motioneffect.toX = effect1.motioneffect.fromX
+    effect.motioneffect.toY = effect1.motioneffect.fromY
+    motion_effect_def.Timing.Duration = 2
+
     Presentation.save()
     #animate()
 
 #========= Execute =========
-animate_try()
-
+#animate_try()
+KMeans_alg()

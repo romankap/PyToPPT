@@ -3,7 +3,11 @@ g = globals()
 random.seed()
 
 from MSO import constants as MSOcon
+from MSPPT import constants as MSPPTcon
+global Presentation
 global Base
+global Slide_Width
+global Slide_Height
 
 #for c in dir(MSO.constants):    g[c] = getattr(MSO.constants, c)
 #for c in dir(MSPPT.constants):  g[c] = getattr(MSPPT.constants, c)
@@ -17,6 +21,11 @@ yellow_color = RGBtoInt(255, 255, 0)
 blue_color = RGBtoInt(0, 0, 255)
 red_color = RGBtoInt(255, 0, 0)
 black_color = RGBtoInt(0,0,0)
+
+def convert_pixels_to_screen_percentage(old_left, new_left, old_top, new_top):
+    delta_X = 100.*(new_left - old_left)/Slide_Width
+    delta_Y = 100.*(new_top - old_top)/Slide_Height
+    return (delta_X, delta_Y)
 
 def animate(seq, shape, trigger, path, duration=1.5):
     '''Move image along path when trigger is clicked'''
@@ -39,7 +48,7 @@ def create_axis(left_start, top_start, left_end, top_end):
     axis.line.EndArrowheadStyle = MSOcon.msoArrowheadTriangle
 
 #--------- Definitions ----------
-Total_Algorithm_Iterations = 5
+Total_Algorithm_Iterations = 2
 Total_Samples = 30
 Number_of_Clusters = 3
 global clusters_dict
@@ -52,7 +61,7 @@ cluster2_left_start = 200;   cluster2_left_stop=450
 cluster2_top_start = 50;     cluster2_top_stop=300
 
 cluster3_left_start = 100;   cluster3_left_stop=450
-cluster3_top_start = 200;   cluster3_top_stop=450
+cluster3_top_start = 100;   cluster3_top_stop=350
 
 Sample_Size = 40
 Mean_Size = 40
@@ -92,6 +101,9 @@ class Mean:
         self.color = clusters_dict[self.class_name]
         self.shape = None
         self.create_mean_shape()
+        self.animation_effect = None
+        self.animation_effect_new_left = 0
+        self.animation_effect_new_top = 0
 
     def create_mean_shape(self):
         self.shape = Base.Shapes.AddShape(MSOcon.msoShapeMathMultiply, self.left, self.top, Mean_Size, Mean_Size)
@@ -106,6 +118,31 @@ class Mean:
 
     def dist_from_sample(self, sample):
         return math.pow(self.left - sample.left(), 2) + math.pow(self.top - sample.top(), 2)
+
+    def add_motion_animation(self, new_left, new_top, first=False):
+        if first:
+            #seq = Presentation.Slides(1).TimeLine.MainSequence
+            motion_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(self.shape,
+                                    effectId=MSPPTcon.msoAnimTypeMotion)
+        else:
+            motion_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(self.shape,
+                                    effectId=MSPPTcon.msoAnimTypeMotion, trigger=MSPPTcon.msoAnimTriggerWithPrevious)
+        effect = motion_effect_def.behaviors.add(MSPPTcon.msoAnimTypeMotion)
+        if not self.animation_effect:
+            effect.motioneffect.fromX = 0
+            effect.motioneffect.fromY = 0
+            dest_coords = convert_pixels_to_screen_percentage(self.shape.left, new_left, self.shape.top, new_top)
+        else:
+            effect.motioneffect.fromX = self.animation_effect.toX
+            effect.motioneffect.fromY = self.animation_effect.toY
+            dest_coords = convert_pixels_to_screen_percentage(self.animation_effect_dest_left, new_left, self.animation_effect_dest_top, new_top)
+
+        effect.motioneffect.toX = dest_coords[0]
+        effect.motioneffect.toY = dest_coords[1]
+        motion_effect_def.Timing.Duration = 1
+        self.animation_effect_dest_left = new_left
+        self.animation_effect_dest_top = new_top
+        self.animation_effect = effect.motioneffect
 
 class Cluster:
     def __init__(self, _left_start, _left_end, _top_start, _top_end):
