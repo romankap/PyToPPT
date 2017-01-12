@@ -25,6 +25,7 @@ KMeans_defs.Slide_Height = Presentation.PageSetup.SlideHeight
 #===== init =======
 def initialize_alg_parameters():
     KMeans_defs.Base = Presentation.Slides.Add(1, 12)
+    #Presentation.Slides.Add(2, 12)
     alg_parameters = KMeansParameters()
     clusters = alg_parameters.clusters
 
@@ -39,6 +40,22 @@ def initialize_alg_parameters():
         rand_top_coord = random.randint(clusters[cluster_index].top_start, clusters[cluster_index].top_end)
         samples.append(Sample(rand_left_coord, rand_top_coord))
 
+        if i == 0:
+            trigger = MSPPTcon.msoAnimTriggerOnPageClick
+            duration = 0.1
+        elif i<20:
+            trigger = MSPPTcon.msoAnimTriggerAfterPrevious
+            duration = 0.1
+        else:
+            trigger = MSPPTcon.msoAnimTriggerWithPrevious
+            duration = 1
+
+        appear_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(samples[i].shape,
+                                                                                   effectId=MSPPTcon.msoAnimEffectFade,
+                                                                                   trigger=trigger)
+        appear_effect_def.Timing.Duration = duration
+        samples[i].effects.append
+
     return samples
 
 #===== K-Means =======
@@ -52,42 +69,54 @@ def KMeans_alg():
     i = 0
     for cluster_type in KMeans_defs.clusters_dict.iteritems():
         random_sample_index = rand_means[i]
-        new_mean = Mean(samples[random_sample_index].left(), samples[random_sample_index].top(), cluster_type[0])
+        new_mean = Mean(samples[random_sample_index].left, samples[random_sample_index].top, cluster_type[0])
         means.append(new_mean)
+        if i==0:
+            appear_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(new_mean.shape,
+                                    effectId=MSPPTcon.msoAnimEffectFade, trigger=MSPPTcon.msoAnimTriggerOnPageClick)
+        else:
+            appear_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(new_mean.shape,
+                                                                                       effectId=MSPPTcon.msoAnimEffectFade, trigger=MSPPTcon.msoAnimTriggerWithPrevious)
+        appear_effect_def.Timing.Duration = 1
         i += 1
+
+
 
     for alg_iteration in range(KMeans_defs.Total_Algorithm_Iterations):
         #2. For each sample, for each mean: calculate distance, asign mean
+        is_first_sample = True
         for curr_sample in samples:
             min_dist = float("inf")
             for curr_mean in means:
                 dist_from_curr_mean = curr_mean.dist_from_sample(curr_sample)
                 if dist_from_curr_mean < min_dist:
                     min_dist = dist_from_curr_mean
-                    curr_sample.classify(curr_mean)
+                    min_mean = curr_mean
 
-        time.sleep(1)
+            curr_sample.add_classification_animation(min_mean, is_first_sample)
+            if is_first_sample:
+                is_first_sample = False
+
+        #time.sleep(1)
 
         #3. For each mean, calculate its new coords
-        first_mean = True
+        is_first_mean = True
         for curr_mean in means:
             sum_left_coord = 0; sum_top_coord = 0
             samples_belong_to_mean = 0
 
             for curr_sample in samples:
                 if curr_sample.get_class_name() == curr_mean.class_name:
-                    sum_left_coord += curr_sample.left()
-                    sum_top_coord += curr_sample.top()
+                    sum_left_coord += curr_sample.left
+                    sum_top_coord += curr_sample.top
                     samples_belong_to_mean += 1
 
             new_left = sum_left_coord/samples_belong_to_mean
             new_top = sum_top_coord/samples_belong_to_mean
             #curr_mean.replace_mean_shape()
-            curr_mean.add_motion_animation(new_left, new_top, first_mean)
-            curr_mean.left = new_left
-            curr_mean.top = new_top
-            if first_mean:
-                first_mean = False
+            curr_mean.add_motion_animation(new_left, new_top, is_first_mean)
+            if is_first_mean:
+                is_first_mean = False
 
 #        time.sleep(1)
 
@@ -136,26 +165,46 @@ def animate_try():
     effect2.motioneffect.toY = effect.motioneffect.fromY
     motion_effect_def2.Timing.Duration = 2
 
-    color_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape2,
+    color_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape,
                                                                               effectId=MSPPTcon.msoAnimEffectChangeFillColor,
                                                                               trigger=MSPPTcon.msoAnimTriggerWithPrevious)
     color_effect = color_effect_def.behaviors.add(MSPPTcon.msoAnimTypeColor)
-    color_effect.ColorEffect.To.RGB = KMeans_defs.black_color
+    color_effect.ColorEffect.From.RGB = KMeans_defs.black_color
+    color_effect.ColorEffect.To.RGB = KMeans_defs.blue_color
 
-
-    motion_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape,
-                                                                               effectId=MSPPTcon.msoAnimTypeMotion,
-                                                                               trigger=MSPPTcon.msoAnimTriggerWithPrevious)
-    effect = motion_effect_def.behaviors.add(MSPPTcon.msoAnimTypeMotion)
-    effect.motioneffect.fromX = effect1.motioneffect.toX
-    effect.motioneffect.fromY = effect1.motioneffect.toY
-    effect.motioneffect.toX = effect1.motioneffect.fromX
-    effect.motioneffect.toY = effect1.motioneffect.fromY
-    motion_effect_def.Timing.Duration = 2
+    color_effect_def2 = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape2,
+                                                                              effectId=MSPPTcon.msoAnimEffectChangeFillColor,
+                                                                              trigger=MSPPTcon.msoAnimTriggerWithPrevious)
+    color_effect2 = color_effect_def2.behaviors.add(MSPPTcon.msoAnimTypeColor)
+    color_effect2.ColorEffect.From.RGB = KMeans_defs.blue_color
+    color_effect2.ColorEffect.To.RGB = KMeans_defs.black_color
 
     Presentation.save()
     #animate()
 
+def appear_try():
+    KMeans_defs.Base = Presentation.Slides.Add(1, 12)
+    shape = KMeans_defs.Base.Shapes.AddShape(MSOcon.msoShapeOval, 100, 100, 50, 50)
+    shape2 = KMeans_defs.Base.Shapes.AddShape(MSOcon.msoShapeOval, 200, 200, 70, 70)
+    shape2.fill.forecolor.RGB = 0
+    shape2.line.forecolor.RGB = KMeans_defs.RGBtoInt(255, 0, 0)
+
+    appear_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape,
+                                                                              effectId=MSPPTcon.msoAnimEffectFade,
+                                                                              trigger=MSPPTcon.msoAnimTriggerOnPageClick)
+    appear_effect_def.Timing.Duration = 1
+
+    shape2.visible = MSOcon.msoTrue
+    appear_effect_def2 = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(shape2,
+                                                                               effectId=MSPPTcon.msoAnimEffectFade,
+                                                                               trigger=MSPPTcon.msoAnimTriggerWithPrevious)
+    appear_effect_def2.Timing.Duration = 1
+
+
+    #effect = appear_effect_def.behaviors.add(MSPPTcon.msoAnimEffectFade)
+    Presentation.save()
+
 #========= Execute =========
-#animate_try()
 KMeans_alg()
+#animate_try()
+#appear_try()

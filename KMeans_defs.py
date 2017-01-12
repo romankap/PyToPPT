@@ -48,20 +48,20 @@ def create_axis(left_start, top_start, left_end, top_end):
     axis.line.EndArrowheadStyle = MSOcon.msoArrowheadTriangle
 
 #--------- Definitions ----------
-Total_Algorithm_Iterations = 2
-Total_Samples = 30
+Total_Algorithm_Iterations = 5
+Total_Samples = 90
 Number_of_Clusters = 3
 global clusters_dict
 clusters_dict = {"yellow": yellow_color, "blue": blue_color, "red": red_color}
 
 cluster1_left_start = 50;    cluster1_left_stop=200
-cluster1_top_start = 50;    cluster1_top_stop=200
+cluster1_top_start = 50;    cluster1_top_stop=230
 
-cluster2_left_start = 200;   cluster2_left_stop=450
-cluster2_top_start = 50;     cluster2_top_stop=300
+cluster2_left_start = 220;   cluster2_left_stop=450
+cluster2_top_start = 50;     cluster2_top_stop=450
 
-cluster3_left_start = 100;   cluster3_left_stop=450
-cluster3_top_start = 100;   cluster3_top_stop=350
+cluster3_left_start = 50;   cluster3_left_stop=230
+cluster3_top_start = 270;   cluster3_top_stop=450
 
 Sample_Size = 40
 Mean_Size = 40
@@ -73,15 +73,19 @@ class Sample:
         self.shape.fill.forecolor.RGB = color
         self.shape.Line.ForeColor.RGB = black_color
         self.shape.Line.Weight = 1
-        self.shape.TextFrame.TextRange.Text = str(top_coord)
-        self.shape.TextFrame.TextRange.font.size = 12
+        #self.shape.TextFrame.TextRange.Text = str(top_coord)
+        #self.shape.TextFrame.TextRange.font.size = 12
         self.class_name = None
+        self.color = black_color
+        self.left = left_coord
+        self.top = top_coord
+        self.effects = []
 
     def left(self):
-        return self.shape.left
+        return self.left
 
     def top(self):
-        return self.shape.top
+        return self.top
 
     def set_fill_color(self, new_color):
         self.shape.fill.forecolor.RGB = new_color
@@ -91,7 +95,27 @@ class Sample:
 
     def classify(self, mean):
         self.class_name = mean.class_name
+        self.color = mean.color
         self.set_fill_color(mean.color)
+
+    def add_classification_animation(self, mean, is_first=False):
+        if is_first:
+            trigger = MSPPTcon.msoAnimTriggerOnPageClick
+        else:
+            trigger = MSPPTcon.msoAnimTriggerWithPrevious
+        color_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(self.shape,
+                              effectId=MSPPTcon.msoAnimEffectChangeFillColor, trigger=trigger)
+
+
+        color_effect = color_effect_def.behaviors.add(MSPPTcon.msoAnimTypeColor)
+        color_effect.ColorEffect.From.RGB = self.color
+        color_effect.ColorEffect.To.RGB = mean.color
+        color_effect_def.Timing.duration = 1
+
+        self.class_name = mean.class_name
+        self.color = mean.color
+        self.effects.append(color_effect_def)
+
 
 class Mean:
     def __init__(self, _left, _top, _class):
@@ -117,13 +141,14 @@ class Mean:
         self.create_mean_shape()
 
     def dist_from_sample(self, sample):
-        return math.pow(self.left - sample.left(), 2) + math.pow(self.top - sample.top(), 2)
+        return math.pow(self.left - sample.left, 2) + math.pow(self.top - sample.top, 2)
 
-    def add_motion_animation(self, new_left, new_top, first=False):
-        if first:
+    def add_motion_animation(self, new_left, new_top, is_first=False):
+        if is_first:
             #seq = Presentation.Slides(1).TimeLine.MainSequence
+
             motion_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(self.shape,
-                                    effectId=MSPPTcon.msoAnimTypeMotion)
+                                    effectId=MSPPTcon.msoAnimTypeMotion, trigger=MSPPTcon.msoAnimTriggerOnPageClick)
         else:
             motion_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(self.shape,
                                     effectId=MSPPTcon.msoAnimTypeMotion, trigger=MSPPTcon.msoAnimTriggerWithPrevious)
@@ -131,17 +156,16 @@ class Mean:
         if not self.animation_effect:
             effect.motioneffect.fromX = 0
             effect.motioneffect.fromY = 0
-            dest_coords = convert_pixels_to_screen_percentage(self.shape.left, new_left, self.shape.top, new_top)
         else:
             effect.motioneffect.fromX = self.animation_effect.toX
             effect.motioneffect.fromY = self.animation_effect.toY
-            dest_coords = convert_pixels_to_screen_percentage(self.animation_effect_dest_left, new_left, self.animation_effect_dest_top, new_top)
 
+        dest_coords = convert_pixels_to_screen_percentage(self.shape.left, new_left, self.shape.top, new_top)
         effect.motioneffect.toX = dest_coords[0]
         effect.motioneffect.toY = dest_coords[1]
         motion_effect_def.Timing.Duration = 1
-        self.animation_effect_dest_left = new_left
-        self.animation_effect_dest_top = new_top
+        self.left = new_left
+        self.top = new_top
         self.animation_effect = effect.motioneffect
 
 class Cluster:
