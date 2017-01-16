@@ -22,6 +22,20 @@ KMeans_defs.Slide_Width = Presentation.PageSetup.SlideWidth
 KMeans_defs.Slide_Height = Presentation.PageSetup.SlideHeight
 
 
+# try for disappear animation
+def disappear_anim(samples):
+
+    for i in range(len(samples)):
+        if i == 0:
+            trigger = MSPPTcon.msoAnimTriggerOnPageClick
+        else:
+            trigger = MSPPTcon.msoAnimTriggerWithPrevious
+
+        disappear_effect_def = Presentation.Slides(1).TimeLine.MainSequence.AddEffect(samples[i].shape,
+                                                                                   effectId=MSPPTcon.msoAnimEffectDissolve,
+                                                                                   trigger=trigger)
+        samples[i].effects.append(disappear_effect_def)
+
 #===== init =======
 def initialize_alg_parameters():
     KMeans_defs.Base = Presentation.Slides.Add(1, 12)
@@ -54,7 +68,7 @@ def initialize_alg_parameters():
                                                                                    effectId=MSPPTcon.msoAnimEffectFade,
                                                                                    trigger=trigger)
         appear_effect_def.Timing.Duration = duration
-        samples[i].effects.append
+        samples[i].effects.append(appear_effect_def)
 
     return samples
 
